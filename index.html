@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>칠재를 삼킨 소녀</title>
+  <style>
+    :root {
+      --bg: #15110e;
+      --panel: #241b17;
+      --panel2: #30231d;
+      --gold: #d6ad61;
+      --red: #c85c4a;
+      --blue: #5aa7c7;
+      --green: #7ab36d;
+      --text: #f3eadb;
+      --muted: #b9aa96;
+      --danger: #e36a5a;
+      --good: #91d18b;
+      --shadow: rgba(0,0,0,.35);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #3a2418 0, var(--bg) 48%, #080706 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid rgba(214,173,97,.45);
+      color: var(--text);
+      background: linear-gradient(180deg, #4a3328, #2b1f1a);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      box-shadow: 0 6px 16px var(--shadow);
+      transition: transform .12s, filter .12s, border-color .12s;
+    }
+    button:hover { transform: translateY(-1px); filter: brightness(1.1); border-color: var(--gold); }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+    .app { max-width: 1180px; margin: 0 auto; padding: 22px; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .title h1 { margin: 0; font-size: 30px; letter-spacing: -1px; }
+    .title p { margin: 4px 0 0; color: var(--muted); }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .badge {
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(214,173,97,.25);
+      border-radius: 999px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 16px;
+    }
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: linear-gradient(180deg, rgba(48,35,29,.96), rgba(31,23,19,.96));
+      border: 1px solid rgba(214,173,97,.22);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 18px 35px var(--shadow);
+    }
+    .card h2, .card h3 { margin-top: 0; }
+    .story-text {
+      line-height: 1.75;
+      color: #f5ead8;
+      font-size: 17px;
+      white-space: pre-line;
+    }
+
+    .choices { display: grid; gap: 10px; margin-top: 18px; }
+    .choice {
+      text-align: left;
+      display: grid;
+      gap: 4px;
+      background: linear-gradient(180deg, #3d2c23, #241b17);
+    }
+    .choice small { color: var(--muted); font-weight: 500; line-height: 1.45; }
+
+    .meter {
+      height: 18px;
+      background: rgba(0,0,0,.35);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .fill { height: 100%; width: 50%; background: linear-gradient(90deg, #8e2f25, #e77764); transition: width .25s; }
+    .fill.enemy { background: linear-gradient(90deg, #3e526d, #72b5e3); }
+    .fill.cycle { background: linear-gradient(90deg, #89602d, var(--gold)); }
+
+    .list { display: grid; gap: 8px; }
+    .item {
+      background: rgba(0,0,0,.2);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 10px;
+      line-height: 1.45;
+    }
+    .item strong { color: var(--gold); }
+
+    .element-fire { color: #ff8b73; }
+    .element-water { color: #73c8ff; }
+    .element-grass { color: #98dc82; }
+    .element-none { color: #ddd; }
+
+    .battlefield {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: stretch;
+      margin-bottom: 14px;
+    }
+    .fighter {
+      min-height: 280px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: radial-gradient(circle at top, rgba(255,255,255,.08), rgba(0,0,0,.22));
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .fighter h3 { margin: 0 0 8px; }
+    .sprite-wrap {
+      height: 165px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .sprite {
+      font-size: 96px;
+      filter: drop-shadow(0 14px 12px rgba(0,0,0,.35));
+      transition: transform .22s, opacity .12s;
+    }
+    .sprite.fireGlow { text-shadow: 0 0 18px #ff6b4a, 0 0 36px #b83222; }
+    .sprite.waterGlow { text-shadow: 0 0 18px #62c8ff, 0 0 36px #236a9b; }
+    .sprite.grassGlow { text-shadow: 0 0 18px #8ee878, 0 0 36px #2f8a35; }
+    .sprite.shadowGlow { text-shadow: 0 0 18px #b58cff, 0 0 36px #31204d; }
+    .sprite.metalGlow { text-shadow: 0 0 18px #d9d9d9, 0 0 36px #6d737a; }
+    .summoner {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .attack-left { transform: translateX(42px) scale(1.05); }
+    .attack-right { transform: translateX(-42px) scale(1.05); }
+    .hit { animation: blink .42s linear 2; }
+    .stunned { animation: shake .4s linear 2; filter: grayscale(.7) drop-shadow(0 0 12px #fff); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
+    .log {
+      height: 230px;
+      overflow: auto;
+      background: #120f0d;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.08);
+      padding: 12px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .log p { margin: 0 0 7px; color: #e9dcc8; }
+    .log .good { color: var(--good); }
+    .log .bad { color: var(--danger); }
+    .log .system { color: var(--gold); }
+
+    .skill-grid, .trait-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+    }
+    .skill-card, .trait-card {
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 12px;
+      display: grid;
+      gap: 6px;
+    }
+    .trait-card.rare {
+      border-color: #ffd36a;
+      background: radial-gradient(circle at top, rgba(255,211,106,.25), rgba(54,35,12,.75));
+      box-shadow: 0 0 22px rgba(255,211,106,.38), 0 0 0 2px rgba(255,211,106,.16) inset;
+      animation: goldenPulse 1.4s ease-in-out infinite alternate;
+    }
+    .trait-card.rare strong::before { content: '✦ '; color: #ffe08a; }
+    @keyframes goldenPulse {
+      from { filter: brightness(1); }
+      to { filter: brightness(1.18); }
+    }
+    .skill-card.equipped, .trait-card.equipped { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(214,173,97,.12) inset; }
+    .skill-card button, .trait-card button { width: 100%; padding: 8px 10px; }
+
+    .death-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.72);
+      z-index: 20;
+      padding: 20px;
+    }
+    .death-modal.active { display: flex; }
+    .modal-inner { max-width: 900px; width: 100%; max-height: 92vh; overflow: auto; }
+
+    .ending {
+      font-size: 18px;
+      line-height: 1.8;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="title">
+        <h1>칠재를 삼킨 소녀</h1>
+        <p>하늘에 바쳐진 소녀 아린의 7개 재앙 순례</p>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="nav">
+      <button onclick="showScreen('story')">스토리</button>
+      <button onclick="showScreen('prepare')">정비</button>
+      <button onclick="showScreen('tips')">팁</button>
+      </div>
+
+    <section id="story" class="screen active">
+      <div class="grid">
+        <div class="card">
+          <h2 id="chapterTitle"></h2>
+          <div class="story-text" id="storyText"></div>
+          <div class="choices" id="choices"></div>
+        </div>
+        <aside class="card">
+          <h3>아린</h3>
+          <div class="meter"><div class="fill" id="hpFill"></div></div>
+          <p id="hpText"></p>
+          <h3>현재 장착 스킬</h3>
+          <div class="list" id="equippedSkillsMini"></div>
+          <h3>영구 특성</h3>
+          <div class="list" id="equippedTraitsMini"></div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="battle" class="screen">
+      <div class="card">
+        <h2 id="battleTitle">전투</h2>
+        <div class="battlefield">
+          <div class="fighter">
+            <h3>아린의 소환수</h3>
+            <div class="sprite-wrap"><div id="playerSprite" class="sprite">🐲</div></div>
+            <div class="meter"><div class="fill" id="battleHpFill"></div></div>
+            <p id="battleHpText"></p>
+            <div class="summoner">아린은 뒤에서 하늘문 주문을 읊는다.</div>
+          </div>
+          <div class="fighter">
+            <h3 id="enemyName">재앙수</h3>
+            <div class="sprite-wrap"><div id="enemySprite" class="sprite">🔥</div></div>
+            <div class="meter"><div class="fill enemy" id="enemyHpFill"></div></div>
+            <p id="enemyHpText"></p>
+          </div>
+        </div>
+        <p>10초 사이클</p>
+        <div class="meter"><div class="fill cycle" id="cycleFill"></div></div>
+        <br />
+        <div class="grid">
+          <div>
+            <h3>전투 로그</h3>
+            <div class="log" id="battleLog"></div>
+          </div>
+          <div>
+            <h3>장착 스킬</h3>
+            <div class="list" id="battleSkillList"></div>
+            <br />
+            <button onclick="fleeBattle()">후퇴하기</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="prepare" class="screen">
+      <div class="card">
+        <h2>정비 화면</h2>
+        <p>스킬 포인트는 총 10입니다. 스킬을 장착해 10초 자동 전투 사이클을 구성하세요.</p>
+        <h3 id="spText"></h3>
+        <div class="skill-grid" id="skillGrid"></div>
+      </div>
+      <br />
+      <div class="card">
+        <h2>영구 특성 슬롯</h2>
+        <p>죽음으로 얻은 기억을 정해진 슬롯 안에 장착합니다. 재앙을 해결할수록 슬롯이 늘어납니다.</p>
+        <div class="trait-grid" id="traitGrid"></div>
+      </div>
+    </section>
+
+    <section id="tips" class="screen">
+      <div class="card">
+        <h2>팁</h2>
+        <div class="list">
+          <div class="item"><strong class="element-fire">불</strong>은 <strong class="element-grass">풀</strong>을 태웁니다.</div>
+          <div class="item"><strong class="element-grass">풀</strong>은 <strong class="element-water">물</strong>을 빨아들입니다.</div>
+          <div class="item"><strong class="element-water">물</strong>은 <strong class="element-fire">불</strong>을 꺼뜨립니다.</div>
+          <div class="item">유리한 속성 공격이 성공하면 피해가 증가하고, 상대의 다음 행동을 취소시키는 <strong>스턴</strong>이 발생합니다.</div>
+          <div class="item">전투는 10초마다 반복됩니다. 장착한 스킬은 확률에 따라 자동으로 발동됩니다.</div>
+          <div class="item">아린이 죽으면 처음부터 다시 시작하지만, 죽음의 기억 하나를 영구 특성으로 새길 수 있습니다.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="ending" class="screen">
+      <div class="card">
+        <h2 id="endingTitle"></h2>
+        <div class="ending" id="endingText"></div>
+        <br />
+        <button onclick="hardReset()">새로운 순례 시작</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="death-modal" id="deathModal">
+    <div class="card modal-inner">
+      <h2>하늘문에서 다시 눈을 뜬다</h2>
+      <p>아린은 죽음의 기억 하나를 영혼에 새길 수 있습니다. 하나를 고르면 모든 재앙은 처음부터 다시 시작됩니다.</p>
+      <div class="trait-grid" id="deathTraits"></div>
+    </div>
+  </div>
+
+<script>
+window.addEventListener('error', function(e) {
+  document.body.innerHTML = `
+    <div style="max-width:760px;margin:40px auto;padding:24px;border-radius:20px;background:#241b17;color:#f3eadb;font-family:system-ui;line-height:1.7;border:1px solid rgba(214,173,97,.35)">
+      <h1 style="margin-top:0;color:#d6ad61">게임을 여는 중 오류가 발생했습니다</h1>
+      <p>브라우저 호환성이나 자바스크립트 실행 오류 때문에 첫 화면이 멈췄을 수 있습니다.</p>
+      <p><strong>권장:</strong> 최신 Chrome 또는 Edge에서 열어주세요. 카카오톡/인스타그램 같은 앱 내부 브라우저에서는 열리지 않을 수 있습니다.</p>
+      <details style="margin-top:14px"><summary>오류 내용 보기</summary><pre style="white-space:pre-wrap;background:#120f0d;padding:12px;border-radius:12px">${e.message || '알 수 없는 오류'}</pre></details>
+    </div>`;
+});
+</script>
+<script>
+const ELEMENT = {
+  fire: { name: '불', cls: 'element-fire', icon: '🔥' },
+  water: { name: '물', cls: 'element-water', icon: '💧' },
+  grass: { name: '풀', cls: 'element-grass', icon: '🌿' },
+  none: { name: '무', cls: 'element-none', icon: '✨' },
+};
+
+const skills = [
+  { id:'emberBite', name:'불씨 물기', dmg:18, chance:70, element:'fire', cost:2, time:2 },
+  { id:'flameTail', name:'화염 꼬리치기', dmg:28, chance:55, element:'fire', cost:3, time:3 },
+  { id:'redBreath', name:'붉은 숨결', dmg:45, chance:35, element:'fire', cost:5, time:5 },
+  { id:'waterClaw', name:'물결 할퀴기', dmg:15, chance:80, element:'water', cost:2, time:2 },
+  { id:'blueWave', name:'푸른 파도', dmg:25, chance:60, element:'water', cost:3, time:3 },
+  { id:'whirlpool', name:'용오름', dmg:40, chance:40, element:'water', cost:5, time:5 },
+  { id:'vineStab', name:'덩굴 찌르기', dmg:16, chance:75, element:'grass', cost:2, time:2 },
+  { id:'thornVine', name:'가시넝쿨', dmg:24, chance:65, element:'grass', cost:3, time:3 },
+  { id:'forestJudgment', name:'숲의 심판', dmg:38, chance:45, element:'grass', cost:5, time:5 },
+  { id:'breath', name:'숨 고르기', heal:10, dmg:0, chance:65, element:'none', cost:2, time:2 },
+  { id:'herbBreath', name:'약초 숨결', heal:24, dmg:0, chance:100, element:'grass', cost:3, time:3 },
+  { id:'heavenGuard', name:'하늘의 비호', shield:8, dmg:0, chance:50, element:'none', cost:3, time:3 },
+];
+
+const traitPool = [
+  { id:'moreHp', name:'제물의 심장', desc:'최대 체력 +15', apply:s=>s.maxHp += 15 },
+  { id:'fireRes', name:'재 속의 기억', desc:'불 속성 피해 10% 감소', apply:s=>s.res.fire += .1 },
+  { id:'waterRes', name:'젖은 혼', desc:'물 속성 피해 10% 감소', apply:s=>s.res.water += .1 },
+  { id:'grassRes', name:'푸른 상처', desc:'풀 속성 피해 10% 감소', apply:s=>s.res.grass += .1 },
+  { id:'chanceUp', name:'되풀이된 기도', desc:'10초 사이클 시작 시 체력 2 회복', apply:s=>s.cycleHeal += 2 },
+  { id:'firstStunImmune', name:'그림자를 밟는 자', desc:'전투마다 첫 스턴 1회 무효', apply:s=>s.firstStunImmune = true },
+  { id:'cycleHeal', name:'끊기지 않는 숨', desc:'10초 사이클 종료 시 체력 3 회복', apply:s=>s.cycleHeal += 3 },
+  { id:'attackUp', name:'장수의 예', desc:'모든 공격 피해 +3', apply:s=>s.damageBonus += 3 },
+];
+
+const rareTraitPool = [
+  { id:'rarePhoenix', name:'황금 불사조의 혼', desc:'최대 체력 +35, 모든 공격 피해 +4', rare:true, apply:s=>{s.maxHp += 35; s.damageBonus += 4;} },
+  { id:'rareHeaven', name:'찬란한 하늘문', desc:'10초 사이클 시작 시 체력 8 회복', rare:true, apply:s=>s.cycleHeal += 8 },
+  { id:'rareKing', name:'삼왕의 가호', desc:'불·물·풀 피해 15% 감소', rare:true, apply:s=>{s.res.fire += .15; s.res.water += .15; s.res.grass += .15;} },
+  { id:'rareStarlight', name:'별을 삼킨 기억', desc:'모든 공격 피해 +8', rare:true, apply:s=>s.damageBonus += 8 },
+];
+
+function allTraits() { return [...traitPool, ...rareTraitPool]; }
+function traitById(id) { return allTraits().find(t=>t.id===id); }
+
+const chapters = [
+  {
+    title:'서장: 하늘에 바쳐진 아이', disaster:'제물 의식', enemy:null,
+    texts:[
+      '대한연맹의 제단 위, 아린은 하늘을 달래기 위한 제물로 묶여 있다.\n그러나 칼이 내려오는 순간, 하늘은 피를 요구하지 않았다.\n아린은 검은 문 안에서 다시 눈을 뜬다.',
+      '하늘문은 속삭인다.\n“죽음은 네 끝이 아니다. 칠재를 직접 거두어라.”\n아린의 곁에 작은 해치가 나타난다.',
+      '첫 번째 재앙이 남쪽 들판에서 기다린다.'
+    ],
+    choices:[
+      [
+        { text:'두려움을 삼키고 일어난다', hint:'최대 체력 +5', effect:s=>{s.maxHp+=5; s.hp+=5;} },
+        { text:'하늘문의 소리를 더 듣는다', hint:'무작위 스킬 하나 획득', effect:s=>gainRandomSkill() },
+        { text:'해치와 첫 계약을 맺는다', hint:'공격력 +2', effect:s=>{ s.damageBonus += 2; } },
+      ],
+      [
+        { text:'남쪽 들판으로 향한다', hint:'제1재앙으로 이동', effect:s=>{} },
+        { text:'정비를 하고 출발한다', hint:'정비 화면으로 이동', effect:s=>showScreen('prepare'), noAdvance:true },
+        { text:'속성 상성을 떠올린다', hint:'팁 화면으로 이동', effect:s=>showScreen('tips'), noAdvance:true },
+      ],
+      [
+        { text:'가뭄의 재앙을 향해 간다', hint:'다음 장으로 이동', effect:s=>nextChapter() },
+      ]
+    ]
+  },
+  {
+    title:'제1재앙: 가뭄의 재앙', disaster:'가뭄', enemy:{name:'한화룡', icon:'🦎', element:'fire', hp:80, skills:['emberBite','flameTail','redBreath']},
+    texts:[
+      '남쪽 들판은 갈라져 있고, 우물 바닥에는 붉은 열기가 고여 있다. 굶주린 아이들이 아린을 바라본다.',
+      '마른 들판 너머로 붉은 연기가 피어난다. 하늘은 불에 그을린 종이처럼 떨린다.',
+      '거대한 불도마뱀 한화룡이 우물의 마지막 물을 삼키고 있다.'
+    ],
+    choices:[
+      [
+        { text:'남은 식량을 나눈다', hint:'체력 -10, 보스 체력 감소', effect:s=>{damagePlayer(10); s.enemyWeak=true;} },
+        { text:'식량을 아낀다', hint:'아무 일도 일어나지 않음', effect:s=>{} },
+        { text:'우물 밑을 조사한다', hint:'50% 확률로 물 스킬, 실패 시 피해', effect:s=>randomEvent(.5,()=>gainSkillByElement('water'),()=>damagePlayer(15)) },
+      ],
+      [
+        { text:'연기를 따라간다', hint:'이번 장 불 피해 감소', effect:s=>s.tempFireRes=.1 },
+        { text:'버려진 제단을 조사한다', hint:'영구 특성 후보 획득', effect:s=>unlockTrait('fireRes') },
+        { text:'숲길로 우회한다', hint:'희귀 스킬 후보 획득, 대신 보스 강화', effect:s=>{gainRandomSkill(true); s.enemyStrong=true;} },
+      ],
+      [
+        { text:'한화룡과 싸운다', hint:'전투 발생', effect:s=>startBattle(chapters[s.chapter].enemy) },
+      ]
+    ], reward: s=>{ gainSkillByElement('water'); s.maxHp+=10; /* 재앙 클리어 후 체력 자동 회복 없음 */ }
+  },
+  {
+    title:'제2재앙: 홍수의 재앙', disaster:'홍수', enemy:{name:'침강사', icon:'🐍', element:'water', hp:95, skills:['waterClaw','blueWave','whirlpool']},
+    texts:[
+      '백제의 옛 강줄기가 넘쳐 마을을 삼켰다. 지붕 위에서 구조를 청하는 목소리가 들린다.',
+      '강 한가운데 오래된 석탑이 물 위로 드러나 있다. 탑의 그림자는 거꾸로 흐른다.',
+      '물뱀 침강사가 강바닥을 찢고 솟구친다.'
+    ],
+    choices:[
+      [
+        { text:'사람들을 구한다', hint:'체력 -15, 더 좋은 회복 스킬 「약초 숨결」 획득', effect:s=>{damagePlayer(15); unlockSkill('herbBreath')} },
+        { text:'높은 지대로 이동한다', hint:'안전하지만 보상 없음', effect:s=>{} },
+        { text:'떠내려온 상자를 연다', hint:'50% 확률 보상 또는 함정', effect:s=>randomEvent(.5,()=>gainRandomSkill(),()=>damagePlayer(15)) },
+      ],
+      [
+        { text:'석탑에 오른다', hint:'보스 체력 소폭 감소', effect:s=>s.enemyWeak=true },
+        { text:'물속으로 들어간다', hint:'피해를 받고 풀 스킬 획득', effect:s=>{damagePlayer(10); gainSkillByElement('grass')} },
+        { text:'기도를 올린다', hint:'체력 +15', effect:s=>heal(15) },
+      ],
+      [ { text:'침강사와 싸운다', hint:'전투 발생', effect:s=>startBattle(chapters[s.chapter].enemy) } ]
+    ], reward:s=>{gainSkillByElement('grass'); s.traitSlots=Math.max(s.traitSlots,3); /* 재앙 클리어 후 체력 자동 회복 없음 */}
+  },
+  {
+    title:'제3재앙: 역병의 재앙', disaster:'역병', enemy:{name:'흑록', icon:'🦌', element:'grass', hp:110, skills:['vineStab','thornVine','forestJudgment']},
+    texts:[
+      '신라의 옛 수도에 검은 꽃이 피었다. 꽃가루를 마신 사람들은 긴 잠에 빠져 있다.',
+      '검은 꽃밭이 길을 막는다. 꽃잎마다 잠든 사람들의 얼굴이 어른거린다.',
+      '병든 숲의 사슴 흑록이 꽃가루를 뿌리며 나타난다.'
+    ],
+    choices:[
+      [
+        { text:'약초를 찾아 숲으로 간다', hint:'체력 +30, 더 좋은 회복 스킬 「약초 숨결」 획득', effect:s=>{heal(30); unlockSkill('herbBreath');} },
+        { text:'병자 곁에서 밤을 지샌다', hint:'체력 -10, 영구 특성 후보 획득', effect:s=>{damagePlayer(10); unlockTrait('grassRes')} },
+        { text:'제사장의 기록을 찾는다', hint:'보스 약화', effect:s=>s.enemyWeak=true },
+      ],
+      [
+        { text:'불로 꽃밭을 태운다', hint:'체력 -10, 보스 약화', effect:s=>{damagePlayer(10); s.enemyWeak=true; gainSkillByElement('fire')} },
+        { text:'꽃가루를 피해 지나간다', hint:'70% 성공, 실패 시 피해', effect:s=>randomEvent(.7,()=>addLogStory('아린은 꽃가루를 피해 지나갔다.'),()=>damagePlayer(20)) },
+        { text:'검은 꽃 하나를 가져간다', hint:'전투 시작 체력 -10, 적 약화', effect:s=>{damagePlayer(10); s.enemyWeak=true;} },
+      ],
+      [ { text:'흑록과 싸운다', hint:'전투 발생', effect:s=>startBattle(chapters[s.chapter].enemy) } ]
+    ], reward:s=>{gainSkillByElement('fire'); s.maxHp+=8; /* 재앙 클리어 후 체력 자동 회복 없음 */}
+  },
+  {
+    title:'제4재앙: 철의 재앙', disaster:'철', enemy:{name:'무혼장', icon:'🛡️', element:'fire', hp:135, skills:['flameTail','thornVine','heavenGuard']},
+    texts:[
+      '고구려의 옛 산성에서 갑옷들이 스스로 움직인다. 죽은 병사들의 원한이 쇳소리로 울린다.',
+      '성벽 위에 병사들의 환영이 줄지어 선다. 그들은 아직도 끝나지 않은 전쟁을 치르고 있다.',
+      '거대한 철갑 장수 무혼장이 산성문을 부수고 걸어 나온다.'
+    ],
+    choices:[
+      [
+        { text:'오래된 창을 가져간다', hint:'공격력 +3, 보스 강화', effect:s=>{s.damageBonus+=3; s.enemyStrong=true;} },
+        { text:'창을 묻어준다', hint:'영구 특성 후보 획득', effect:s=>unlockTrait('attackUp') },
+        { text:'창끝의 피를 조사한다', hint:'체력 -5, 보스 약화', effect:s=>{damagePlayer(5); s.enemyWeak=true;} },
+      ],
+      [
+        { text:'환영에 맞서 싸운다', hint:'무작위 스킬 획득, 체력 -10', effect:s=>{damagePlayer(10); gainRandomSkill()} },
+        { text:'그들의 이름을 불러준다', hint:'체력 회복, 대신 보스 강화', effect:s=>{heal(12); s.enemyStrong=true;} },
+        { text:'도망친다', hint:'피해 없음', effect:s=>s.enemyStrong=true },
+      ],
+      [ { text:'무혼장과 싸운다', hint:'전투 발생', effect:s=>startBattle(chapters[s.chapter].enemy) } ]
+    ], reward:s=>{s.traitSlots=Math.max(s.traitSlots,4); unlockSkill('heavenGuard'); /* 재앙 클리어 후 체력 자동 회복 없음 */}
+  },
+  {
+    title:'제5재앙: 그림자의 재앙', disaster:'그림자', enemy:{name:'야호', icon:'🦊', element:'water', hp:150, skills:['blueWave','vineStab','flameTail']},
+    texts:[
+      '대한연맹 수도에 밤이 끝나지 않는다. 사람들의 그림자가 몸에서 떨어져 나와 골목을 기어 다닌다.',
+      '검은 시장에서 얼굴 없는 상인이 손짓한다. “네 죽음 하나를 맡기면 힘을 주마.”',
+      '검은 여우 야호가 아린의 얼굴로 웃는다.'
+    ],
+    choices:[
+      [
+        { text:'그림자의 말을 듣는다', hint:'체력 -10, 무작위 특성 후보', effect:s=>{damagePlayer(10); unlockRandomTrait()} },
+        { text:'그림자를 베어낸다', hint:'공격력 증가, 체력 회복량 감소', effect:s=>{s.damageBonus+=4; s.healPenalty=3;} },
+        { text:'그림자와 함께 걷는다', hint:'첫 스턴 면역 특성 후보', effect:s=>unlockTrait('firstStunImmune') },
+      ],
+      [
+        { text:'스킬을 산다', hint:'체력 -15, 희귀 스킬 획득', effect:s=>{damagePlayer(15); gainRandomSkill(true)} },
+        { text:'영혼 조각을 맡긴다', hint:'최대 체력 -15, 체력 완전 회복', effect:s=>{s.maxHp-=15; s.hp=s.maxHp;} },
+        { text:'상인을 거절한다', hint:'아무 손해 없음', effect:s=>{} },
+      ],
+      [ { text:'야호와 싸운다', hint:'전투 발생', effect:s=>startBattle(chapters[s.chapter].enemy) } ]
+    ], reward:s=>{unlockTrait('firstStunImmune'); /* 재앙 클리어 후 체력 자동 회복 없음 */}
+  },
+  {
+    title:'제6재앙: 별의 재앙', disaster:'별', enemy:{name:'낙성조', icon:'🦅', element:'grass', hp:170, skills:['whirlpool','forestJudgment','blueWave']},
+    texts:[
+      '하늘의 별이 하나씩 떨어지고 있다. 별이 닿은 땅에서는 같은 하루가 반복된다.',
+      '별 조각 하나가 아린의 손바닥에 내려앉는다. 그것은 심장처럼 뛰고 있다.',
+      '별빛을 삼킨 새 낙성조가 시간을 접어 날아든다.'
+    ],
+    choices:[
+      [
+        { text:'기억을 따라간다', hint:'보스 약화', effect:s=>s.enemyWeak=true },
+        { text:'새로운 길을 택한다', hint:'스킬 획득 또는 피해', effect:s=>randomEvent(.55,()=>gainRandomSkill(true),()=>damagePlayer(18)) },
+        { text:'그 자리에 멈춘다', hint:'체력 회복', effect:s=>heal(18) },
+      ],
+      [
+        { text:'별 조각을 삼킨다', hint:'공격력 +5, 체력 -20', effect:s=>{s.damageBonus+=5; damagePlayer(20)} },
+        { text:'소환수에게 먹인다', hint:'공격력 증가, 보스 강화', effect:s=>{s.damageBonus+=5; s.enemyStrong=true;} },
+        { text:'하늘문에 바친다', hint:'마지막 특성 슬롯 개방', effect:s=>s.traitSlots=Math.max(s.traitSlots,5) },
+      ],
+      [ { text:'낙성조와 싸운다', hint:'전투 발생', effect:s=>startBattle(chapters[s.chapter].enemy) } ]
+    ], reward:s=>{s.traitSlots=Math.max(s.traitSlots,5); /* 재앙 클리어 후 체력 자동 회복 없음 */}
+  },
+  {
+    title:'제7재앙: 하늘의 재앙', disaster:'하늘', enemy:{name:'천식', icon:'🌑', element:'fire', hp:220, skills:['redBreath','whirlpool','forestJudgment','heavenGuard']},
+    texts:[
+      '모든 재앙의 근원은 하늘이 아니었다. 수백 년 동안 제물로 바쳐진 혼들이 하늘문에 고여 검은 태양이 되었다.',
+      '죽었던 모든 회차의 아린들이 길가에 서 있다. 그들은 묻는다. “너는 우리를 기억하니?”',
+      '검은 태양 천식이 하늘을 먹어 치우며 내려온다.'
+    ],
+    choices:[
+      [
+        { text:'제사장들을 용서한다', hint:'체력 회복, 방어 상승', effect:s=>{heal(25); s.res.fire+=.05; s.res.water+=.05; s.res.grass+=.05;} },
+        { text:'분노를 드러낸다', hint:'공격력 상승, 체력 손실', effect:s=>{s.damageBonus+=8; damagePlayer(15)} },
+        { text:'아무 말 없이 지나간다', hint:'특수 엔딩 조건', effect:s=>s.silentEnding=true },
+      ],
+      [
+        { text:'기억들을 받아들인다', hint:'공격력과 회복력 증가', effect:s=>{s.damageBonus+=3; s.cycleHeal+=2;} },
+        { text:'기억들을 놓아준다', hint:'체력 완전 회복', effect:s=>s.hp=s.maxHp },
+        { text:'가장 아픈 죽음을 고른다', hint:'공격력과 방어 소폭 증가', effect:s=>{s.damageBonus+=4; s.res.fire+=.04; s.res.water+=.04; s.res.grass+=.04;} },
+      ],
+      [ { text:'천식과 싸운다', hint:'최종 전투', effect:s=>startBattle(chapters[s.chapter].enemy, true) } ]
+    ], reward:s=>finishGame()
+  }
+];
+
+let state;
+let battle = null;
+let cycleTimer = null;
+let tickTimer = null;
+let cycleProgress = 0;
+
+function newState(keepMeta=false) {
+  const old = state || {};
+  state = {
+    chapter:0, step:0, hp:80, maxHp:80,
+    ownedSkills:['emberBite','waterClaw','vineStab','breath'],
+    equippedSkills:['emberBite','waterClaw','vineStab','breath'],
+    unlockedTraits: keepMeta ? [...(old.unlockedTraits||[])] : [],
+    equippedTraits: keepMeta ? [...(old.equippedTraits||[])] : [],
+    traitSlots: keepMeta ? Math.max(2, old.traitSlots||2) : 2,
+    deaths: keepMeta ? (old.deaths||0) : 0,
+    cleared: keepMeta ? (old.cleared||0) : 0,
+    rareTraitBoost: keepMeta ? (old.rareTraitBoost||0) : 0,
+    res:{fire:0, water:0, grass:0}, chanceBonus:0, damageBonus:0, cycleHeal:0,
+    firstStunImmune:false, stunImmuneUsed:false,
+    enemyWeak:false, enemyStrong:false, tempFireRes:0, healPenalty:0, silentEnding:false,
+  };
+  applyTraits();
+}
+
+function applyTraits() {
+  const preserve = { chapter:state.chapter, step:state.step, hp:state.hp, ownedSkills:state.ownedSkills, equippedSkills:state.equippedSkills, unlockedTraits:state.unlockedTraits, equippedTraits:state.equippedTraits, traitSlots:state.traitSlots, deaths:state.deaths, cleared:state.cleared, silentEnding:state.silentEnding };
+  const hpRatio = state.hp / state.maxHp;
+  Object.assign(state, { maxHp:80, res:{fire:0, water:0, grass:0}, chanceBonus:0, damageBonus:0, cycleHeal:0, firstStunImmune:false });
+  Object.assign(state, preserve);
+  state.equippedTraits.forEach(id => traitById(id)?.apply(state));
+  state.hp = Math.min(state.maxHp, Math.max(1, Math.round(state.maxHp * hpRatio)));
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  render();
+}
+
+function render() {
+  renderStats();
+  renderStory();
+  renderPrepare();
+  renderMini();
+}
+
+function renderStats() {
+  const sp = state.equippedSkills.reduce((a,id)=>a+skillById(id).cost,0);
+  document.getElementById('stats').innerHTML = `
+    <span class="badge">체력 ${state.hp}/${state.maxHp}</span>
+    <span class="badge">재앙 ${Math.max(0,state.chapter)}/7</span>
+    <span class="badge">죽음 ${state.deaths}</span>
+    <span class="badge">스킬 포인트 ${sp}/10</span>
+    <span class="badge">영구 슬롯 ${state.equippedTraits.length}/${state.traitSlots}</span>
+  `;
+}
+
+function renderStory() {
+  const ch = chapters[state.chapter];
+  if (!ch) return;
+  document.getElementById('chapterTitle').textContent = ch.title;
+  document.getElementById('storyText').textContent = ch.texts[state.step] || ch.texts[ch.texts.length-1];
+  document.getElementById('choices').innerHTML = (ch.choices[state.step]||[]).map((c,i)=>`
+    <button class="choice" onclick="choose(${i})">
+      <span>${c.text}</span><small>${c.hint}</small>
+    </button>
+  `).join('');
+  document.getElementById('hpFill').style.width = `${Math.max(0,state.hp/state.maxHp*100)}%`;
+  document.getElementById('hpText').textContent = `체력 ${state.hp} / ${state.maxHp}`;
+}
+
+function renderMini() {
+  document.getElementById('equippedSkillsMini').innerHTML = state.equippedSkills.map(id=>skillMini(skillById(id))).join('') || '<div class="item">없음</div>';
+  document.getElementById('equippedTraitsMini').innerHTML = state.equippedTraits.map(id=>{
+    const t = traitById(id);
+    return `<div class="item"><strong>${t.name}</strong><br>${t.desc}</div>`;
+  }).join('') || '<div class="item">없음</div>';
+}
+
+function renderPrepare() {
+  const used = state.equippedSkills.reduce((a,id)=>a+skillById(id).cost,0);
+  document.getElementById('spText').textContent = `사용 중인 스킬 포인트: ${used} / 10`;
+  document.getElementById('skillGrid').innerHTML = state.ownedSkills.map(id=>{
+    const sk = skillById(id), eq = state.equippedSkills.includes(id);
+    const disabled = !eq && used + sk.cost > 10;
+    return `<div class="skill-card ${eq?'equipped':''}">
+      <strong>${sk.name}</strong>
+      <span class="${ELEMENT[sk.element].cls}">${ELEMENT[sk.element].icon} ${ELEMENT[sk.element].name}</span>
+      <span>피해 ${sk.dmg||0}${sk.heal?` / 회복 ${sk.heal}`:''}${sk.shield?` / 보호 ${sk.shield}`:''}</span>
+      <span>포인트 ${sk.cost}</span>
+      <button ${disabled?'disabled':''} onclick="toggleSkill('${id}')">${eq?'해제':'장착'}</button>
+    </div>`;
+  }).join('');
+
+  const all = state.unlockedTraits.map(id=>traitById(id)).filter(Boolean);
+  document.getElementById('traitGrid').innerHTML = all.length ? all.map(t=>{
+    const eq = state.equippedTraits.includes(t.id);
+    const disabled = !eq && state.equippedTraits.length >= state.traitSlots;
+    return `<div class="trait-card ${eq?'equipped':''} ${t.rare?'rare':''}">
+      <strong>${t.name}</strong>
+      <span>${t.desc}</span>
+      <button ${disabled?'disabled':''} onclick="toggleTrait('${t.id}')">${eq?'해제':'장착'}</button>
+    </div>`;
+  }).join('') : '<div class="item">아직 죽음의 기억이 없습니다.</div>';
+}
+
+function choose(i) {
+  const ch = chapters[state.chapter];
+  const choice = ch.choices[state.step][i];
+  choice.effect(state);
+  if (state.hp <= 0) return die();
+  if (!choice.noAdvance && !battle) state.step++;
+  render();
+}
+
+function nextChapter() {
+  state.chapter++;
+  state.step = 0;
+  state.enemyWeak = false;
+  state.enemyStrong = false;
+  state.tempFireRes = 0;
+}
+
+function skillById(id) { return skills.find(s=>s.id===id); }
+function enemySkillList(enemy) { return enemy.skills.map(skillById); }
+function skillMini(sk) { return `<div class="item"><strong>${sk.name}</strong> <span class="${ELEMENT[sk.element].cls}">${ELEMENT[sk.element].name}</span><br>피해 ${sk.dmg||0} / SP ${sk.cost}</div>`; }
+
+function toggleSkill(id) {
+  const idx = state.equippedSkills.indexOf(id);
+  if (idx >= 0) state.equippedSkills.splice(idx,1);
+  else {
+    const used = state.equippedSkills.reduce((a,x)=>a+skillById(x).cost,0);
+    if (used + skillById(id).cost <= 10) state.equippedSkills.push(id);
+  }
+  render();
+}
+
+function toggleTrait(id) {
+  const idx = state.equippedTraits.indexOf(id);
+  if (idx >= 0) state.equippedTraits.splice(idx,1);
+  else if (state.equippedTraits.length < state.traitSlots) state.equippedTraits.push(id);
+  applyTraits();
+  render();
+}
+
+function unlockSkill(id) { if (!state.ownedSkills.includes(id)) state.ownedSkills.push(id); }
+function gainRandomSkill(rare=false) {
+  const candidates = skills.filter(s=>!state.ownedSkills.includes(s.id) && (!rare || s.cost>=3));
+  if (candidates.length) unlockSkill(candidates[Math.floor(Math.random()*candidates.length)].id);
+}
+function gainSkillByElement(el) {
+  const candidates = skills.filter(s=>s.element===el && !state.ownedSkills.includes(s.id));
+  if (candidates.length) unlockSkill(candidates[Math.floor(Math.random()*candidates.length)].id);
+}
+function unlockTrait(id) {
+  if (!state.unlockedTraits.includes(id)) state.unlockedTraits.push(id);
+  if (state.hp > 0) state.rareTraitBoost = Math.min(0.42, (state.rareTraitBoost || 0) + 0.12);
+}
+function unlockRandomTrait() {
+  const pool = Math.random() < 0.15 ? rareTraitPool : traitPool;
+  const c = pool.filter(t=>!state.unlockedTraits.includes(t.id));
+  if (c.length) unlockTrait(c[Math.floor(Math.random()*c.length)].id);
+  else {
+    const fallback = allTraits().filter(t=>!state.unlockedTraits.includes(t.id));
+    if (fallback.length) unlockTrait(fallback[Math.floor(Math.random()*fallback.length)].id);
+  }
+}
+
+function heal(n) { state.hp = Math.min(state.maxHp, state.hp + Math.max(1,n-(state.healPenalty||0))); }
+function damagePlayer(n) { state.hp -= n; if (state.hp <= 0) die(); }
+function randomEvent(p, good, bad) { Math.random() < p ? good() : bad(); }
+function addLogStory(txt) { console.log(txt); }
+
+function startBattle(enemy, final=false) {
+  const hpMod = state.enemyWeak ? .85 : state.enemyStrong ? 1.18 : 1;
+  battle = {
+    enemy:{...enemy, maxHp:Math.round(enemy.hp*hpMod), hp:Math.round(enemy.hp*hpMod)},
+    final, playerStunned:false, enemyStunned:false, shield:0, cycle:0,
+    finalElements:['fire','water','grass'], stunCount:{fire:false, water:false, grass:false}
+  };
+  state.stunImmuneUsed = false;
+  showScreen('battle');
+  document.getElementById('battleLog').innerHTML = '';
+  log('system', `${enemy.name}이 나타났다. 10초 사이클이 시작된다.`);
+  renderBattle();
+  clearInterval(cycleTimer); clearInterval(tickTimer);
+  cycleProgress = 0;
+  tickTimer = setInterval(()=>{
+    cycleProgress += 1;
+    document.getElementById('cycleFill').style.width = `${cycleProgress*10}%`;
+    if (cycleProgress >= 10) cycleProgress = 0;
+  },1000);
+  cycleTimer = setInterval(runCycle, 10000);
+  setTimeout(runCycle, 800);
+}
+
+function runCycle() {
+  if (!battle) return;
+  battle.cycle++;
+  if (battle.final) {
+    battle.enemy.element = battle.finalElements[(battle.cycle-1)%3];
+    log('system', `천식의 속성이 ${ELEMENT[battle.enemy.element].name}(으)로 변했다.`);
+  }
+  if (state.cycleHeal) { heal(state.cycleHeal); log('good', `되풀이된 기도: 사이클 시작 시 체력 ${state.cycleHeal} 회복.`); }
+  log('system', `--- ${battle.cycle}번째 10초 사이클: 장착 기술 전부 발동 ---`);
+
+  const playerSkills = shuffle([...state.equippedSkills.map(skillById)]).map(sk => ({ side:'player', sk }));
+  const enemySkills = shuffle([...enemySkillList(battle.enemy)]).map(sk => ({ side:'enemy', sk }));
+  const queue = [...playerSkills, ...enemySkills];
+  const interval = Math.max(450, Math.floor(9000 / Math.max(1, queue.length)));
+
+  queue.forEach((action, idx) => {
+    setTimeout(() => {
+      if (!battle || battle.enemy.hp <= 0 || state.hp <= 0) return;
+      runAction(action.side, action.sk);
+      if (battle && battle.enemy.hp <= 0) return winBattle();
+      if (state.hp <= 0) return die();
+      renderBattle();
+    }, idx * interval);
+  });
+}
+
+function runAction(side, sk) {
+  const isPlayer = side === 'player';
+  if (isPlayer && battle.playerStunned) { log('bad','아린의 소환수는 스턴으로 이번 기술을 잃었다.'); battle.playerStunned=false; animateStun('player'); return; }
+  if (!isPlayer && battle.enemyStunned) { log('good',`${battle.enemy.name}은 스턴으로 이번 기술을 잃었다.`); battle.enemyStunned=false; animateStun('enemy'); return; }
+  useSkill(side, sk);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function useSkill(side, sk) {
+  const isPlayer = side === 'player';
+  animateAttack(side);
+  if (sk.heal && isPlayer) { heal(sk.heal); log('good', `해치가 「${sk.name}」로 체력 ${sk.heal}을 회복했다.`); return; }
+  if (sk.shield && isPlayer) { battle.shield += sk.shield; log('good', `하늘의 비호가 피해 ${sk.shield}를 막을 준비를 했다.`); return; }
+  const atkEl = sk.element;
+  const defEl = isPlayer ? battle.enemy.element : 'none';
+  const targetEl = isPlayer ? battle.enemy.element : getDominantPlayerElement();
+  let dmg = (sk.dmg || 0) + (isPlayer ? state.damageBonus : 0);
+  const adv = isAdvantage(atkEl, targetEl);
+  if (adv) dmg = Math.round(dmg * 1.3);
+  if (isPlayer) {
+    battle.enemy.hp -= dmg;
+    log('good', `해치의 「${sk.name}」 성공! ${battle.enemy.name}에게 ${dmg} 피해.`);
+    animateHit('enemy');
+    if (adv) { battle.enemyStunned = true; battle.stunCount[atkEl] = true; log('system', `속성 우위! ${battle.enemy.name}의 다음 행동을 끊었다.`); animateStun('enemy'); }
+  } else {
+    let reduced = dmg;
+    const res = state.res[atkEl] || 0;
+    reduced = Math.max(1, Math.round(reduced * (1 - res - (atkEl==='fire'?state.tempFireRes||0:0))));
+    if (battle.shield) {
+      const blocked = Math.min(battle.shield, reduced);
+      reduced -= blocked;
+      battle.shield -= blocked;
+      log('system', `하늘의 비호가 피해 ${blocked}를 막았다.`);
+    }
+    state.hp -= reduced;
+    log('bad', `${battle.enemy.name}의 「${sk.name}」 성공! 아린의 소환수가 ${reduced} 피해를 받았다.`);
+    animateHit('player');
+    if (adv) {
+      if (state.firstStunImmune && !state.stunImmuneUsed) {
+        state.stunImmuneUsed = true;
+        log('system','그림자를 밟는 자: 첫 스턴을 무효화했다.');
+      } else {
+        battle.playerStunned = true;
+        log('bad','속성 열세! 다음 행동이 끊긴다.');
+        animateStun('player');
+      }
+    }
+  }
+}
+
+function isAdvantage(a,b) {
+  return (a==='fire'&&b==='grass') || (a==='water'&&b==='fire') || (a==='grass'&&b==='water');
+}
+function getDominantPlayerElement() {
+  const counts = {fire:0, water:0, grass:0};
+  state.equippedSkills.map(skillById).forEach(s=>{ if(counts[s.element]!==undefined) counts[s.element]++; });
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+}
+
+function renderBattle() {
+  if (!battle) return;
+  document.getElementById('battleTitle').textContent = `${chapters[state.chapter].title} - 전투`;
+  document.getElementById('enemyName').innerHTML = `${battle.enemy.name} <span class="${ELEMENT[battle.enemy.element].cls}">(${ELEMENT[battle.enemy.element].name})</span>`;
+  const enemySprite = document.getElementById('enemySprite');
+  enemySprite.textContent = battle.enemy.icon;
+  enemySprite.className = 'sprite ' + enemySpriteClass(battle.enemy);
+  document.getElementById('battleHpFill').style.width = `${Math.max(0,state.hp/state.maxHp*100)}%`;
+  document.getElementById('battleHpText').textContent = `체력 ${state.hp} / ${state.maxHp}`;
+  document.getElementById('enemyHpFill').style.width = `${Math.max(0,battle.enemy.hp/battle.enemy.maxHp*100)}%`;
+  document.getElementById('enemyHpText').textContent = `체력 ${Math.max(0,battle.enemy.hp)} / ${battle.enemy.maxHp}`;
+  document.getElementById('battleSkillList').innerHTML = state.equippedSkills.map(id=>skillMini(skillById(id))).join('');
+  renderStats();
+}
+
+function enemySpriteClass(enemy) {
+  if (enemy.name === '무혼장') return 'metalGlow';
+  if (enemy.name === '야호' || enemy.name === '천식') return 'shadowGlow';
+  if (enemy.element === 'fire') return 'fireGlow';
+  if (enemy.element === 'water') return 'waterGlow';
+  if (enemy.element === 'grass') return 'grassGlow';
+  return '';
+}
+
+function log(cls, text) {
+  const box = document.getElementById('battleLog');
+  const p = document.createElement('p'); p.className = cls; p.textContent = text;
+  box.prepend(p);
+}
+function animateAttack(side) {
+  const el = document.getElementById(side==='player'?'playerSprite':'enemySprite');
+  el.classList.add(side==='player'?'attack-left':'attack-right');
+  setTimeout(()=>el.classList.remove('attack-left','attack-right'),220);
+}
+function animateHit(side) {
+  const el = document.getElementById(side==='player'?'playerSprite':'enemySprite');
+  el.classList.add('hit'); setTimeout(()=>el.classList.remove('hit'),500);
+}
+function animateStun(side) {
+  const el = document.getElementById(side==='player'?'playerSprite':'enemySprite');
+  el.classList.add('stunned'); setTimeout(()=>el.classList.remove('stunned'),700);
+}
+
+function winBattle() {
+  clearInterval(cycleTimer); clearInterval(tickTimer);
+  const ch = chapters[state.chapter];
+  log('system', `${battle.enemy.name}을 물리쳤다!`);
+  const final = battle.final;
+  battle = null;
+  setTimeout(()=>{
+    ch.reward?.(state);
+    if (!final) {
+      state.cleared = Math.max(state.cleared, state.chapter);
+      nextChapter();
+      showScreen('story');
+    }
+    render();
+  },800);
+}
+
+function fleeBattle() {
+  if (!battle) return;
+  clearInterval(cycleTimer); clearInterval(tickTimer);
+  battle = null;
+  damagePlayer(12);
+  showScreen('story');
+}
+
+function die() {
+  clearInterval(cycleTimer); clearInterval(tickTimer);
+  battle = null;
+  state.deaths++;
+  state.hp = 0;
+  let candidates = traitPool.filter(t=>!state.unlockedTraits.includes(t.id)).sort(()=>Math.random()-.5).slice(0,3);
+  const rareChance = Math.min(0.60, 0.18 + (state.rareTraitBoost || 0));
+  if (Math.random() < rareChance) {
+    const rare = rareTraitPool.filter(t=>!state.unlockedTraits.includes(t.id)).sort(()=>Math.random()-.5)[0];
+    if (rare) candidates[Math.floor(Math.random()*Math.max(1,candidates.length))] = rare;
+  }
+  if (candidates.length === 0) candidates.push(...allTraits().sort(()=>Math.random()-.5).slice(0,3));
+  document.getElementById('deathTraits').innerHTML = candidates.map(t=>`
+    <div class="trait-card ${t.rare?'rare':''}">
+      <strong>${t.name}</strong>
+      <span>${t.desc}</span>
+      <button onclick="chooseDeathTrait('${t.id}')">이 기억을 새긴다</button>
+    </div>`).join('');
+  document.getElementById('deathModal').classList.add('active');
+  render();
+}
+
+function chooseDeathTrait(id) {
+  unlockTrait(id);
+  const saved = { unlockedTraits:[...state.unlockedTraits], equippedTraits:[...state.equippedTraits], traitSlots:state.traitSlots, deaths:state.deaths };
+  newState(true);
+  state.unlockedTraits = saved.unlockedTraits;
+  state.equippedTraits = saved.equippedTraits.filter(x=>state.unlockedTraits.includes(x)).slice(0,state.traitSlots);
+  state.traitSlots = saved.traitSlots;
+  state.deaths = saved.deaths;
+  state.rareTraitBoost = 0;
+  state.hp = state.maxHp;
+  applyTraits();
+  document.getElementById('deathModal').classList.remove('active');
+  showScreen('story');
+}
+
+function finishGame() {
+  clearInterval(cycleTimer); clearInterval(tickTimer);
+  const allStuns = battle?.stunCount && Object.values(battle.stunCount).every(Boolean);
+  battle = null;
+  let title, text;
+  if (state.silentEnding && allStuns) {
+    title = '진엔딩: 하늘을 거절한 소녀';
+    text = '아린은 하늘도, 제사장도, 재앙도 따르지 않았다.\n그녀는 하늘문을 부수고, 그 안에 갇힌 모든 제물의 혼을 풀어주었다.\n대한연맹은 더 이상 제물을 바치지 않는다.\n사람들은 스스로 재앙에 맞서는 법을 배우기 시작한다.';
+  } else if (state.equippedTraits.length >= 4) {
+    title = '엔딩: 재앙을 삼킨 소녀';
+    text = '아린은 칠재를 모두 거두고 살아 돌아왔다.\n하늘문은 닫혔고, 대한연맹의 제단에는 더 이상 피가 흐르지 않았다.\n사람들은 그녀를 첫 번째 재앙사냥꾼이라 불렀다.';
+  } else {
+    title = '엔딩: 제물이 된 소녀';
+    text = '아린은 재앙을 없앴지만, 자신의 혼을 하늘문에 봉인해야 했다.\n대한연맹은 구원받았으나, 사람들은 아직 제단을 완전히 버리지 못했다.\n하늘은 조용해졌지만, 침묵이 곧 평화는 아니었다.';
+  }
+  document.getElementById('endingTitle').textContent = title;
+  document.getElementById('endingText').textContent = text;
+  showScreen('ending');
+}
+
+function hardReset() {
+  clearInterval(cycleTimer); clearInterval(tickTimer);
+  document.getElementById('deathModal').classList.remove('active');
+  battle = null;
+  newState(false);
+  showScreen('story');
+}
+
+function applyBalanceAndUiPatches() {
+  const nav = document.querySelector('.nav');
+  if (nav && !document.getElementById('bgmBtn')) {
+    const btn = document.createElement('button');
+    btn.id = 'bgmBtn';
+    btn.textContent = 'BGM 켜기';
+    btn.onclick = toggleBgm;
+    nav.appendChild(btn);
+  }
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .skill-card.rare-skill {
+      border-color: #9ddcff !important;
+      background: radial-gradient(circle at top, rgba(80,170,255,.25), rgba(17,35,56,.82)) !important;
+      box-shadow: 0 0 18px rgba(80,170,255,.32), 0 0 0 2px rgba(80,170,255,.12) inset !important;
+    }
+    .skill-card.rare-skill strong::before { content: '◆ '; color: #9ddcff; }
+  `;
+  document.head.appendChild(style);
+
+  ['redBreath','whirlpool','forestJudgment','herbBreath'].forEach(id => {
+    const sk = skills.find(s => s.id === id);
+    if (sk) sk.rare = true;
+  });
+
+  function patchChoice(text, hint, effect) {
+    chapters.forEach(ch => ch.choices.forEach(group => group.forEach(c => {
+      if (c.text === text) {
+        if (hint) c.hint = hint;
+        if (effect) c.effect = effect;
+      }
+    })));
+  }
+
+  patchChoice('남은 식량을 나눈다', '체력 -10. 이번 장 보스 약화: 보스 최대 체력 15% 감소');
+  patchChoice('우물 밑을 조사한다', '50% 확률로 물 스킬 획득. 실패 시 체력 -15');
+  patchChoice('연기를 따라간다', '이번 장 한정: 불 속성 피해 10% 감소');
+  patchChoice('버려진 제단을 조사한다', '영구 특성 획득: 재 속의 기억. 다음 죽음 때 희귀 영구 특성 확률 증가');
+  patchChoice('숲길로 우회한다', '희귀 스킬 획득. 대신 이번 장 보스 강화: 보스 최대 체력 18% 증가', s=>{gainRandomSkill(true); s.enemyStrong=true;});
+  patchChoice('사람들을 구한다', '체력 -15. 희귀 회복 스킬 「약초 숨결」 획득');
+  patchChoice('떠내려온 상자를 연다', '50% 확률로 스킬 획득. 실패 시 체력 -15');
+  patchChoice('석탑에 오른다', '이번 장 보스 약화: 보스 최대 체력 15% 감소');
+  patchChoice('물속으로 들어간다', '체력 -10. 풀 스킬 획득');
+  patchChoice('기도를 올린다', '체력 +15 회복');
+  patchChoice('약초를 찾아 숲으로 간다', '체력 +30 회복. 희귀 회복 스킬 「약초 숨결」 획득');
+  patchChoice('병자 곁에서 밤을 지샌다', '체력 -10. 영구 특성 획득: 푸른 상처. 다음 죽음 때 희귀 영구 특성 확률 증가');
+  patchChoice('제사장의 기록을 찾는다', '이번 장 보스 약화: 보스 최대 체력 15% 감소');
+  patchChoice('불로 꽃밭을 태운다', '체력 -10. 불 스킬 획득. 이번 장 보스 약화: 보스 최대 체력 15% 감소');
+  patchChoice('꽃가루를 피해 지나간다', '70% 성공 시 피해 없음. 실패 시 체력 -20');
+  patchChoice('검은 꽃 하나를 가져간다', '체력 -10. 이번 장 보스 약화: 보스 최대 체력 15% 감소');
+  patchChoice('오래된 창을 가져간다', '공격력 +3. 대신 이번 장 보스 강화: 보스 최대 체력 18% 증가');
+  patchChoice('창을 묻어준다', '영구 특성 획득: 장수의 예. 다음 죽음 때 희귀 영구 특성 확률 증가');
+  patchChoice('창끝의 피를 조사한다', '체력 -5. 이번 장 보스 약화: 보스 최대 체력 15% 감소');
+  patchChoice('환영에 맞서 싸운다', '체력 -10. 무작위 스킬 획득');
+  patchChoice('그들의 이름을 불러준다', '체력 +12 회복. 대신 이번 장 보스 강화: 보스 최대 체력 18% 증가');
+  patchChoice('그림자의 말을 듣는다', '체력 -10. 영구 특성 획득. 다음 죽음 때 희귀 영구 특성 확률 증가');
+  patchChoice('스킬을 산다', '체력 -15. 희귀 스킬 획득');
+  patchChoice('새로운 길을 택한다', '55% 확률로 희귀 스킬 획득. 실패 시 체력 -18');
+  patchChoice('그 자리에 멈춘다', '체력 +18 회복');
+  patchChoice('별 조각을 삼킨다', '공격력 +5. 체력 -20');
+  patchChoice('소환수에게 먹인다', '공격력 +5. 대신 이번 장 보스 강화: 보스 최대 체력 18% 증가');
+  patchChoice('하늘문에 바친다', '영구 특성 슬롯 5칸까지 개방');
+  patchChoice('제사장들을 용서한다', '체력 +25 회복. 이번 회차 모든 속성 피해 5% 감소');
+  patchChoice('분노를 드러낸다', '공격력 +8. 체력 -15');
+  patchChoice('기억들을 놓아준다', '체력 완전 회복: 현재 최대 체력까지 회복');
+
+  const originalRenderPrepare = renderPrepare;
+  renderPrepare = function() {
+    const used = state.equippedSkills.reduce((a,id)=>a+skillById(id).cost,0);
+    document.getElementById('spText').textContent = `사용 중인 스킬 포인트: ${used} / 10`;
+    document.getElementById('skillGrid').innerHTML = state.ownedSkills.map(id=>{
+      const sk = skillById(id), eq = state.equippedSkills.includes(id);
+      const disabled = !eq && used + sk.cost > 10;
+      return `<div class="skill-card ${eq?'equipped':''} ${sk.rare?'rare-skill':''}">
+        <strong>${sk.name}</strong>
+        <span class="${ELEMENT[sk.element].cls}">${ELEMENT[sk.element].icon} ${ELEMENT[sk.element].name}</span>
+        <span>피해 ${sk.dmg||0}${sk.heal?` / 회복 ${sk.heal}`:''}${sk.shield?` / 보호 ${sk.shield}`:''}</span>
+        <span>포인트 ${sk.cost}</span>
+        <button ${disabled?'disabled':''} onclick="toggleSkill('${id}')">${eq?'해제':'장착'}</button>
+      </div>`;
+    }).join('');
+
+    const all = state.unlockedTraits.map(id=>traitById(id)).filter(Boolean);
+    document.getElementById('traitGrid').innerHTML = all.length ? all.map(t=>{
+      const eq = state.equippedTraits.includes(t.id);
+      const disabled = !eq && state.equippedTraits.length >= state.traitSlots;
+      return `<div class="trait-card ${eq?'equipped':''} ${t.rare?'rare':''}">
+        <strong>${t.name}</strong>
+        <span>${t.desc}</span>
+        <button ${disabled?'disabled':''} onclick="toggleTrait('${t.id}')">${eq?'해제':'장착'}</button>
+      </div>`;
+    }).join('') : '<div class="item">아직 죽음의 기억이 없습니다.</div>';
+  };
+
+  const tipsList = document.querySelector('#tips .list');
+  if (tipsList && !document.getElementById('bossWeakTip')) {
+    tipsList.insertAdjacentHTML('beforeend', `
+      <div class="item" id="bossWeakTip">이번 장 보스 약화는 현재 재앙의 보스에게만 적용되며, 보스 최대 체력을 15% 낮춥니다.</div>
+      <div class="item">이번 장 보스 강화는 현재 재앙의 보스에게만 적용되며, 보스 최대 체력을 18% 높입니다.</div>
+      <div class="item">파란빛 카드의 ◆ 스킬은 희귀 스킬입니다. 일반 스킬보다 강하거나 특별한 효과를 가집니다.</div>
+    `);
+  }
+}
+
+let bgmCtx = null;
+let bgmTimer = null;
+let bgmOn = false;
+function toggleBgm() {
+  if (bgmOn) {
+    clearInterval(bgmTimer);
+    bgmTimer = null;
+    bgmOn = false;
+    document.getElementById('bgmBtn').textContent = 'BGM 켜기';
+    return;
+  }
+  bgmCtx = bgmCtx || new (window.AudioContext || window.webkitAudioContext)();
+  bgmOn = true;
+  document.getElementById('bgmBtn').textContent = 'BGM 끄기';
+  playBgmNote();
+  bgmTimer = setInterval(playBgmNote, 720);
+}
+function playBgmNote() {
+  if (!bgmCtx || !bgmOn) return;
+  const scale = [220, 246.94, 293.66, 329.63, 392, 440];
+  const freq = scale[Math.floor(Math.random()*scale.length)];
+  const osc = bgmCtx.createOscillator();
+  const gain = bgmCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.0001, bgmCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.045, bgmCtx.currentTime + 0.08);
+  gain.gain.exponentialRampToValueAtTime(0.0001, bgmCtx.currentTime + 0.65);
+  osc.connect(gain).connect(bgmCtx.destination);
+  osc.start();
+  osc.stop(bgmCtx.currentTime + 0.7);
+}
+
+applyBalanceAndUiPatches();
+
+function applyBalanceAndUiPatchesV2() {
+  const style = document.createElement('style');
+  style.textContent = `
+    .skill-card.equipped {
+      border-color: #ffe08a !important;
+      outline: 3px solid rgba(255,224,138,.82) !important;
+      box-shadow: 0 0 28px rgba(255,224,138,.48), 0 0 0 3px rgba(255,224,138,.22) inset !important;
+      transform: translateY(-2px);
+    }
+    .skill-card.equipped::after {
+      content: '장착 중';
+      display: inline-block;
+      width: fit-content;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255,224,138,.22);
+      color: #ffe08a;
+      font-weight: 900;
+      font-size: 12px;
+    }
+    .trait-card.legendary {
+      border-color: #fff1a8 !important;
+      background: radial-gradient(circle at top, rgba(255,241,168,.36), rgba(82,46,8,.9)) !important;
+      box-shadow: 0 0 34px rgba(255,241,168,.6), 0 0 0 3px rgba(255,241,168,.22) inset !important;
+      animation: goldenPulse .85s ease-in-out infinite alternate;
+    }
+    .trait-card.legendary strong::before { content: '★ '; color: #fff1a8; }
+  `;
+  document.head.appendChild(style);
+
+  ['redBreath','whirlpool','forestJudgment','herbBreath'].forEach(id => {
+    const sk = skills.find(s => s.id === id);
+    if (sk) sk.rare = true;
+  });
+
+  const legendaryTraitPool = [
+    { id:'legendHeavenBreaker', name:'전설: 하늘문을 부순 자', desc:'최대 체력 +60, 모든 공격 피해 +12, 10초 사이클 시작 시 체력 10 회복', rare:true, legendary:true, apply:s=>{s.maxHp += 60; s.damageBonus += 12; s.cycleHeal += 10;} },
+    { id:'legendSevenCalamities', name:'전설: 칠재를 삼킨 혼', desc:'불·물·풀 피해 25% 감소, 전투마다 첫 스턴 1회 무효', rare:true, legendary:true, apply:s=>{s.res.fire += .25; s.res.water += .25; s.res.grass += .25; s.firstStunImmune = true;} }
+  ];
+  window.legendaryTraitPool = legendaryTraitPool;
+  const baseAllTraits = allTraits;
+  allTraits = function() { return [...baseAllTraits(), ...legendaryTraitPool]; };
+  traitById = function(id) { return allTraits().find(t=>t.id===id); };
+
+  const baseUnlockRandomTrait = unlockRandomTrait;
+  unlockRandomTrait = function() {
+    const normalAndRareDone = [...traitPool, ...rareTraitPool].every(t => state.unlockedTraits.includes(t.id));
+    if (normalAndRareDone) {
+      const legendary = legendaryTraitPool.filter(t => !state.unlockedTraits.includes(t.id));
+      if (legendary.length) return unlockTrait(legendary[Math.floor(Math.random()*legendary.length)].id);
+    }
+    return baseUnlockRandomTrait();
+  };
+
+  const baseDie = die;
+  die = function() {
+    const normalAndRareDone = [...traitPool, ...rareTraitPool].every(t => state.unlockedTraits.includes(t.id));
+    if (!normalAndRareDone) return baseDie();
+    clearInterval(cycleTimer); clearInterval(tickTimer);
+    battle = null;
+    state.deaths++;
+    state.hp = 0;
+    const candidates = legendaryTraitPool.filter(t=>!state.unlockedTraits.includes(t.id));
+    document.getElementById('deathTraits').innerHTML = (candidates.length ? candidates : legendaryTraitPool).map(t=>`
+      <div class="trait-card rare legendary">
+        <strong>${t.name}</strong>
+        <span>${t.desc}</span>
+        <button onclick="chooseDeathTrait('${t.id}')">이 전설을 새긴다</button>
+      </div>`).join('');
+    document.getElementById('deathModal').classList.add('active');
+    render();
+  };
+
+  function patchChoice(text, hint, effect) {
+    chapters.forEach(ch => ch.choices.forEach(group => group.forEach(c => {
+      if (c.text === text) {
+        if (hint) c.hint = hint;
+        if (effect) c.effect = effect;
+      }
+    })));
+  }
+
+  const weak = '이번 장 한정 보스 약화: 이번 장 보스의 최대 체력만 15% 감소. 공격력은 감소하지 않음';
+  const strong = '이번 장 한정 보스 강화: 이번 장 보스의 최대 체력만 18% 증가. 공격력은 증가하지 않음';
+
+  patchChoice('남은 식량을 나눈다', `체력 -10. ${weak}`);
+  patchChoice('석탑에 오른다', weak);
+  patchChoice('제사장의 기록을 찾는다', weak);
+  patchChoice('불로 꽃밭을 태운다', `체력 -10. 불 스킬 획득. ${weak}`);
+  patchChoice('검은 꽃 하나를 가져간다', '체력 -10. 영구 특성 획득: 푸른 상처. 다음 죽음 때 희귀 영구 특성 확률 증가', s=>{damagePlayer(10); unlockTrait('grassRes');});
+  patchChoice('창끝의 피를 조사한다', `체력 -5. ${weak}`);
+  patchChoice('숲길로 우회한다', `희귀 스킬 획득. 대신 ${strong}`, s=>{gainRandomSkill(true); s.enemyStrong=true;});
+  patchChoice('오래된 창을 가져간다', `공격력 +3. 대신 ${strong}`);
+  patchChoice('그들의 이름을 불러준다', `체력 +12 회복. 대신 ${strong}`);
+  patchChoice('소환수에게 먹인다', `공격력 +5. 대신 ${strong}`);
+  patchChoice('버려진 제단을 조사한다', '영구 특성 획득: 재 속의 기억. 다음 죽음 때 희귀 영구 특성 확률 증가');
+  patchChoice('창을 묻어준다', '영구 특성 획득: 장수의 예. 다음 죽음 때 희귀 영구 특성 확률 증가');
+  patchChoice('병자 곁에서 밤을 지샌다', '체력 -10. 영구 특성 획득: 푸른 상처. 다음 죽음 때 희귀 영구 특성 확률 증가');
+  patchChoice('그림자와 함께 걷는다', '영구 특성 획득: 그림자를 밟는 자. 전투마다 첫 스턴 1회 무효. 다음 죽음 때 희귀 영구 특성 확률 증가');
+  patchChoice('그림자의 말을 듣는다', '체력 -10. 무작위 영구 특성 1개 획득. 다음 죽음 때 희귀 영구 특성 확률 증가');
+
+  const baseRenderPrepare = renderPrepare;
+  renderPrepare = function() {
+    baseRenderPrepare();
+    document.querySelectorAll('.skill-card').forEach(card => {
+      if (card.classList.contains('equipped')) card.setAttribute('aria-label', '장착 중');
+    });
+    document.querySelectorAll('.trait-card').forEach(card => {
+      const name = card.querySelector('strong')?.textContent || '';
+      if (name.includes('전설:')) card.classList.add('legendary', 'rare');
+    });
+  };
+
+  const tipsList = document.querySelector('#tips .list');
+  if (tipsList && !document.getElementById('bossWeakTipV2')) {
+    tipsList.insertAdjacentHTML('beforeend', `
+      <div class="item" id="bossWeakTipV2">이번 장 보스 약화는 현재 재앙의 보스에게만 적용되며, 보스 최대 체력만 15% 낮춥니다. 공격력은 감소하지 않습니다.</div>
+      <div class="item">이번 장 보스 강화는 현재 재앙의 보스에게만 적용되며, 보스 최대 체력만 18% 높입니다. 공격력은 증가하지 않습니다.</div>
+      <div class="item">모든 일반·희귀 영구 특성을 해금하면, 이후 죽음 보상이나 무작위 영구 특성 획득에서 전설 영구 특성이 등장합니다.</div>
+    `);
+  }
+
+  playBgmNote = function() {
+    if (!bgmCtx || !bgmOn) return;
+    const now = bgmCtx.currentTime;
+    const melody = [196, 220, 246.94, 293.66, 246.94, 220, 196, 164.81];
+    const bass = [98, 110, 123.47, 146.83];
+    const m = melody[Math.floor(Math.random()*melody.length)];
+    const b = bass[Math.floor(Math.random()*bass.length)];
+
+    function softTone(freq, start, duration, type, volume) {
+      const osc = bgmCtx.createOscillator();
+      const gain = bgmCtx.createGain();
+      const filter = bgmCtx.createBiquadFilter();
+      osc.type = type;
+      osc.frequency.value = freq;
+      filter.type = 'lowpass';
+      filter.frequency.value = 900;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume, start + 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      osc.connect(filter).connect(gain).connect(bgmCtx.destination);
+      osc.start(start);
+      osc.stop(start + duration + 0.05);
+    }
+
+    softTone(b, now, 1.4, 'triangle', 0.028);
+    softTone(m, now + 0.03, 1.05, 'sine', 0.035);
+    softTone(m * 1.5, now + 0.08, 0.9, 'sine', 0.018);
+  };
+}
+
+applyBalanceAndUiPatchesV2();
+
+function applyPolishPatchV3() {
+  const style = document.createElement('style');
+  style.textContent = `
+    #ending .card { text-align: center; }
+    #endingTitle { text-align: center; font-size: 34px; }
+    #endingText { text-align: center; max-width: 820px; margin: 0 auto; }
+    .ending-image {
+      margin: 18px auto 20px;
+      min-height: 210px;
+      max-width: 760px;
+      border-radius: 24px;
+      border: 1px solid rgba(255,224,138,.38);
+      background:
+        radial-gradient(circle at 50% 15%, rgba(255,241,168,.45), transparent 22%),
+        linear-gradient(180deg, rgba(83,48,22,.95), rgba(23,18,16,.96));
+      box-shadow: 0 20px 40px rgba(0,0,0,.35), 0 0 30px rgba(255,224,138,.18) inset;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      overflow: hidden;
+      position: relative;
+    }
+    .ending-image::before {
+      content: '🎉  🙌  🏮  👧  🐲  🏮  🙌  🎉';
+      font-size: 58px;
+      letter-spacing: 6px;
+      filter: drop-shadow(0 10px 12px rgba(0,0,0,.38));
+      animation: cheerFloat 1.8s ease-in-out infinite alternate;
+    }
+    .ending-image::after {
+      content: '대한연맹의 백성들이 아린의 귀환을 환호한다';
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      color: #ffe9a8;
+      font-weight: 900;
+      text-shadow: 0 2px 8px rgba(0,0,0,.65);
+      white-space: nowrap;
+    }
+    @keyframes cheerFloat {
+      from { transform: translateY(0) scale(1); }
+      to { transform: translateY(-8px) scale(1.03); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  function patchChoice(text, hint, effect) {
+    chapters.forEach(ch => ch.choices.forEach(group => group.forEach(c => {
+      if (c.text === text) {
+        if (hint) c.hint = hint;
+        if (effect) c.effect = effect;
+      }
+    })));
+  }
+
+  const weak = '이번 스테이지 보스 체력 15% 감소';
+  const strong = '이번 스테이지 보스 체력 18% 증가';
+
+  patchChoice('남은 식량을 나눈다', `체력 -10. ${weak}`);
+  patchChoice('석탑에 오른다', weak);
+  patchChoice('제사장의 기록을 찾는다', weak);
+  patchChoice('불로 꽃밭을 태운다', `체력 -10. 불 스킬 획득. ${weak}`);
+  patchChoice('창끝의 피를 조사한다', `체력 -5. ${weak}`);
+  patchChoice('검은 꽃 하나를 가져간다', '체력 -10. 영구 특성 획득: 푸른 상처. 다음 죽음 때 희귀 영구 특성 확률 증가', s=>{damagePlayer(10); unlockTrait('grassRes');});
+
+  patchChoice('숲길로 우회한다', `희귀 스킬 획득. 대신 ${strong}`, s=>{gainRareSkill(); s.enemyStrong=true;});
+  patchChoice('스킬을 산다', '체력 -15. 희귀 스킬 획득', s=>{damagePlayer(15); gainRareSkill();});
+  patchChoice('새로운 길을 택한다', '55% 확률로 희귀 스킬 획득. 실패 시 체력 -18', s=>randomEvent(.55,()=>gainRareSkill(),()=>damagePlayer(18)));
+
+  patchChoice('오래된 창을 가져간다', `공격력 +3. 대신 ${strong}`);
+  patchChoice('그들의 이름을 불러준다', `체력 +12 회복. 대신 ${strong}`);
+  patchChoice('소환수에게 먹인다', `공격력 +5. 대신 ${strong}`);
+  patchChoice('그림자를 베어낸다', '공격력 +4. 회복 효과 -3', s=>{s.damageBonus+=4; s.healPenalty=3;});
+
+  function gainRareSkill() {
+    const candidates = skills.filter(s=>s.rare && !state.ownedSkills.includes(s.id));
+    if (candidates.length) unlockSkill(candidates[Math.floor(Math.random()*candidates.length)].id);
+    else gainRandomSkill(true);
+  }
+  window.gainRareSkill = gainRareSkill;
+
+  const tipsList = document.querySelector('#tips .list');
+  if (tipsList && !document.getElementById('bossWeakTipV3')) {
+    tipsList.insertAdjacentHTML('beforeend', `
+      <div class="item" id="bossWeakTipV3">“이번 스테이지 보스 체력 감소/증가”는 현재 재앙의 보스에게만 적용됩니다.</div>
+      <div class="item">희귀 스킬 획득 선택지는 파란 ◆ 희귀 스킬을 우선 지급합니다.</div>
+    `);
+  }
+
+  let bgmStep = 0;
+  let endingMode = false;
+  const mainMelody = [261.63, 329.63, 392.00, 329.63, 293.66, 349.23, 440.00, 392.00, 329.63, 293.66, 261.63, 293.66];
+  const mainBass = [130.81, 130.81, 146.83, 146.83, 174.61, 174.61, 196.00, 196.00];
+  const endMelody = [329.63, 392.00, 493.88, 523.25, 493.88, 440.00, 392.00, 523.25];
+  const endBass = [164.81, 196.00, 220.00, 261.63];
+
+  window.setEndingBgm = function(on) {
+    endingMode = !!on;
+    bgmStep = 0;
+    if (bgmOn) {
+      clearInterval(bgmTimer);
+      playBgmNote();
+      bgmTimer = setInterval(playBgmNote, endingMode ? 520 : 460);
+    }
+  };
+
+  playBgmNote = function() {
+    if (!bgmCtx || !bgmOn) return;
+    const now = bgmCtx.currentTime;
+    const melody = endingMode ? endMelody : mainMelody;
+    const bass = endingMode ? endBass : mainBass;
+    const m = melody[bgmStep % melody.length];
+    const b = bass[Math.floor((bgmStep / 2) % bass.length)];
+    const third = m * (endingMode ? 1.25 : 1.5);
+    bgmStep++;
+
+    function tone(freq, start, duration, type, volume, cutoff) {
+      const osc = bgmCtx.createOscillator();
+      const gain = bgmCtx.createGain();
+      const filter = bgmCtx.createBiquadFilter();
+      osc.type = type;
+      osc.frequency.value = freq;
+      filter.type = 'lowpass';
+      filter.frequency.value = cutoff;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume, start + 0.035);
+      gain.gain.exponentialRampToValueAtTime(Math.max(volume * 0.45, 0.0002), start + duration * 0.45);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      osc.connect(filter).connect(gain).connect(bgmCtx.destination);
+      osc.start(start);
+      osc.stop(start + duration + 0.03);
+    }
+
+    tone(b, now, endingMode ? 1.1 : 0.95, 'triangle', endingMode ? 0.038 : 0.03, 750);
+    tone(m, now + 0.02, endingMode ? 0.72 : 0.52, 'triangle', endingMode ? 0.05 : 0.042, 1200);
+    tone(third, now + 0.04, endingMode ? 0.62 : 0.45, 'sine', endingMode ? 0.024 : 0.018, 1400);
+  };
+
+  const baseShowScreen = showScreen;
+  showScreen = function(id) {
+    baseShowScreen(id);
+    if (typeof setEndingBgm === 'function') setEndingBgm(id === 'ending');
+  };
+
+  const baseFinishGame = finishGame;
+  finishGame = function() {
+    baseFinishGame();
+    const endingText = document.getElementById('endingText');
+    if (endingText && !document.querySelector('.ending-image')) {
+      endingText.insertAdjacentHTML('beforebegin', '<div class="ending-image"></div>');
+    }
+    if (typeof setEndingBgm === 'function') setEndingBgm(true);
+  };
+}
+
+applyPolishPatchV3();
+newState(false);
+render();
+</script>
+</body>
+</html>
