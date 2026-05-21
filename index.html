@@ -1468,6 +1468,500 @@ function applyPolishPatchV3() {
 }
 
 applyPolishPatchV3();
+
+function applyAudioPatchV4() {
+  let currentMusicMode = 'main';
+  let musicStep = 0;
+  const mainMelody = [261.63, 329.63, 392.00, 440.00, 392.00, 329.63, 293.66, 329.63, 261.63, 293.66, 329.63, 392.00];
+  const mainBass = [130.81, 130.81, 146.83, 146.83, 174.61, 174.61, 196.00, 196.00];
+  const endingMelody = [329.63, 392.00, 493.88, 523.25, 587.33, 523.25, 493.88, 392.00];
+  const endingBass = [164.81, 196.00, 220.00, 261.63];
+
+  window.setEndingBgm = function(on) {
+    const nextMode = on ? 'ending' : 'main';
+    if (currentMusicMode === nextMode) return;
+    currentMusicMode = nextMode;
+    musicStep = 0;
+  };
+
+  playBgmNote = function() {
+    if (!bgmCtx || !bgmOn) return;
+    const now = bgmCtx.currentTime;
+    const melody = currentMusicMode === 'ending' ? endingMelody : mainMelody;
+    const bass = currentMusicMode === 'ending' ? endingBass : mainBass;
+    const m = melody[musicStep % melody.length];
+    const b = bass[Math.floor((musicStep / 2) % bass.length)];
+    const harmony = currentMusicMode === 'ending' ? m * 1.25 : m * 1.5;
+    musicStep++;
+
+    function tone(freq, start, duration, type, volume, cutoff) {
+      const osc = bgmCtx.createOscillator();
+      const gain = bgmCtx.createGain();
+      const filter = bgmCtx.createBiquadFilter();
+      osc.type = type;
+      osc.frequency.value = freq;
+      filter.type = 'lowpass';
+      filter.frequency.value = cutoff;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume, start + 0.035);
+      gain.gain.exponentialRampToValueAtTime(volume * 0.42, start + duration * 0.55);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      osc.connect(filter).connect(gain).connect(bgmCtx.destination);
+      osc.start(start);
+      osc.stop(start + duration + 0.04);
+    }
+
+    const isEnding = currentMusicMode === 'ending';
+    tone(b, now, isEnding ? 1.1 : 0.95, 'triangle', isEnding ? 0.038 : 0.028, 760);
+    tone(m, now + 0.02, isEnding ? 0.78 : 0.56, 'triangle', isEnding ? 0.052 : 0.04, 1300);
+    tone(harmony, now + 0.045, isEnding ? 0.66 : 0.44, 'sine', isEnding ? 0.023 : 0.016, 1500);
+  };
+
+  const previousToggleBgm = toggleBgm;
+  toggleBgm = function() {
+    previousToggleBgm();
+    if (bgmOn) {
+      clearInterval(bgmTimer);
+      playBgmNote();
+      bgmTimer = setInterval(playBgmNote, currentMusicMode === 'ending' ? 520 : 460);
+    }
+  };
+
+  const previousShowScreen = showScreen;
+  showScreen = function(id) {
+    previousShowScreen(id);
+    if (id === 'ending') {
+      setEndingBgm(true);
+      if (bgmOn) {
+        clearInterval(bgmTimer);
+        playBgmNote();
+        bgmTimer = setInterval(playBgmNote, 520);
+      }
+    }
+  };
+
+  function playClickSound() {
+    try {
+      bgmCtx = bgmCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const now = bgmCtx.currentTime;
+      const osc = bgmCtx.createOscillator();
+      const gain = bgmCtx.createGain();
+      const filter = bgmCtx.createBiquadFilter();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(780, now + 0.045);
+      filter.type = 'lowpass';
+      filter.frequency.value = 1800;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.055, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+      osc.connect(filter).connect(gain).connect(bgmCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.13);
+    } catch (e) {}
+  }
+
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('button')) playClickSound();
+  }, true);
+}
+
+applyAudioPatchV4();
+
+function applyAudioPatchV5() {
+  let musicMode = 'main';
+  let step = 0;
+  const mainMelody = [293.66, 349.23, 392.00, 440.00, 392.00, 349.23, 329.63, 392.00, 523.25, 493.88, 440.00, 392.00, 349.23, 392.00, 440.00, 587.33];
+  const mainBass = [146.83, 146.83, 196.00, 196.00, 174.61, 174.61, 220.00, 220.00];
+  const endingMelody = [392.00, 493.88, 587.33, 659.25, 587.33, 523.25, 493.88, 587.33, 659.25, 783.99, 659.25, 587.33];
+  const endingBass = [196.00, 246.94, 293.66, 329.63];
+
+  window.setEndingBgm = function(on) {
+    const next = on ? 'ending' : 'main';
+    if (musicMode !== next) {
+      musicMode = next;
+      step = 0;
+    }
+  };
+
+  function tone(freq, start, duration, type, volume, cutoff) {
+    if (!bgmCtx) return;
+    const osc = bgmCtx.createOscillator();
+    const gain = bgmCtx.createGain();
+    const filter = bgmCtx.createBiquadFilter();
+    osc.type = type;
+    osc.frequency.value = freq;
+    filter.type = 'lowpass';
+    filter.frequency.value = cutoff;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.018);
+    gain.gain.exponentialRampToValueAtTime(volume * 0.35, start + duration * 0.55);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    osc.connect(filter).connect(gain).connect(bgmCtx.destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.03);
+  }
+
+  function noiseHit(start, volume) {
+    if (!bgmCtx) return;
+    const bufferSize = bgmCtx.sampleRate * 0.12;
+    const buffer = bgmCtx.createBuffer(1, bufferSize, bgmCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const source = bgmCtx.createBufferSource();
+    const gain = bgmCtx.createGain();
+    const filter = bgmCtx.createBiquadFilter();
+    source.buffer = buffer;
+    filter.type = 'lowpass';
+    filter.frequency.value = 900;
+    gain.gain.setValueAtTime(volume, start);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.12);
+    source.connect(filter).connect(gain).connect(bgmCtx.destination);
+    source.start(start);
+  }
+
+  playBgmNote = function() {
+    if (!bgmCtx || !bgmOn) return;
+    const now = bgmCtx.currentTime;
+    const isEnd = musicMode === 'ending';
+    const melody = isEnd ? endingMelody : mainMelody;
+    const bass = isEnd ? endingBass : mainBass;
+    const m = melody[step % melody.length];
+    const b = bass[Math.floor((step / 2) % bass.length)];
+    const offBeat = melody[(step + 3) % melody.length];
+
+    tone(b, now, isEnd ? 0.95 : 0.72, 'triangle', isEnd ? 0.035 : 0.03, 850);
+    tone(m, now + 0.015, isEnd ? 0.58 : 0.36, 'square', isEnd ? 0.034 : 0.026, 1150);
+    tone(m * 2, now + 0.025, 0.22, 'sine', 0.012, 1800);
+    if (!isEnd && step % 2 === 1) tone(offBeat, now + 0.18, 0.22, 'triangle', 0.018, 1400);
+    if (!isEnd && step % 4 === 0) noiseHit(now + 0.02, 0.012);
+    if (isEnd && step % 3 === 0) tone(m * 1.25, now + 0.16, 0.42, 'triangle', 0.02, 1600);
+    step++;
+  };
+
+  const previousToggle = toggleBgm;
+  toggleBgm = function() {
+    previousToggle();
+    if (bgmOn) {
+      clearInterval(bgmTimer);
+      playBgmNote();
+      bgmTimer = setInterval(playBgmNote, musicMode === 'ending' ? 430 : 330);
+    }
+  };
+
+  const previousShow = showScreen;
+  showScreen = function(id) {
+    previousShow(id);
+    if (id === 'ending') {
+      setEndingBgm(true);
+      if (bgmOn) {
+        clearInterval(bgmTimer);
+        playBgmNote();
+        bgmTimer = setInterval(playBgmNote, 430);
+      }
+    }
+  };
+
+  window.playHitSound = function(kind='normal') {
+    try {
+      bgmCtx = bgmCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const now = bgmCtx.currentTime;
+      if (kind === 'stun') {
+        tone(180, now, 0.16, 'sawtooth', 0.055, 700);
+        tone(90, now + 0.03, 0.18, 'triangle', 0.04, 500);
+        noiseHit(now, 0.04);
+      } else {
+        tone(155, now, 0.11, 'square', 0.045, 850);
+        tone(95, now + 0.025, 0.13, 'triangle', 0.035, 600);
+        noiseHit(now, 0.032);
+      }
+    } catch (e) {}
+  };
+
+  const oldAnimateHit = animateHit;
+  animateHit = function(side) {
+    oldAnimateHit(side);
+    if (typeof playHitSound === 'function') playHitSound('normal');
+  };
+
+  const oldAnimateStun = animateStun;
+  animateStun = function(side) {
+    oldAnimateStun(side);
+    if (typeof playHitSound === 'function') playHitSound('stun');
+  };
+}
+
+applyAudioPatchV5();
+
+function applyMusicPatchV6() {
+  let musicMode = 'main';
+  let step = 0;
+
+  // 부드러운 국악풍 5음계 느낌의 새 멜로디입니다. 날카로운 square/saw 파형과 노이즈 리듬은 제거했습니다.
+  const mainMelody = [
+    392.00, 440.00, 523.25, 440.00,
+    392.00, 329.63, 392.00, 293.66,
+    329.63, 392.00, 440.00, 392.00,
+    329.63, 293.66, 261.63, 293.66
+  ];
+  const mainBass = [196.00, 196.00, 164.81, 164.81, 174.61, 174.61, 146.83, 146.83];
+
+  const endingMelody = [
+    392.00, 440.00, 523.25, 587.33,
+    659.25, 587.33, 523.25, 440.00,
+    493.88, 523.25, 587.33, 523.25,
+    440.00, 392.00, 440.00, 523.25
+  ];
+  const endingBass = [196.00, 220.00, 261.63, 246.94];
+
+  window.setEndingBgm = function(on) {
+    const next = on ? 'ending' : 'main';
+    if (musicMode !== next) {
+      musicMode = next;
+      step = 0;
+    }
+  };
+
+  function softBell(freq, start, duration, volume) {
+    if (!bgmCtx) return;
+    const osc1 = bgmCtx.createOscillator();
+    const osc2 = bgmCtx.createOscillator();
+    const gain = bgmCtx.createGain();
+    const filter = bgmCtx.createBiquadFilter();
+
+    osc1.type = 'sine';
+    osc2.type = 'triangle';
+    osc1.frequency.value = freq;
+    osc2.frequency.value = freq * 2.01;
+
+    filter.type = 'lowpass';
+    filter.frequency.value = 1250;
+    filter.Q.value = 0.5;
+
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.06);
+    gain.gain.exponentialRampToValueAtTime(volume * 0.36, start + duration * 0.45);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+    osc1.connect(filter);
+    osc2.connect(filter);
+    filter.connect(gain).connect(bgmCtx.destination);
+    osc1.start(start);
+    osc2.start(start);
+    osc1.stop(start + duration + 0.05);
+    osc2.stop(start + duration + 0.05);
+  }
+
+  function softPad(freq, start, duration, volume) {
+    if (!bgmCtx) return;
+    const osc = bgmCtx.createOscillator();
+    const gain = bgmCtx.createGain();
+    const filter = bgmCtx.createBiquadFilter();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    filter.type = 'lowpass';
+    filter.frequency.value = 700;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.18);
+    gain.gain.exponentialRampToValueAtTime(volume * 0.55, start + duration * 0.7);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    osc.connect(filter).connect(gain).connect(bgmCtx.destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.08);
+  }
+
+  playBgmNote = function() {
+    if (!bgmCtx || !bgmOn) return;
+    const now = bgmCtx.currentTime;
+    const isEnding = musicMode === 'ending';
+    const melody = isEnding ? endingMelody : mainMelody;
+    const bass = isEnding ? endingBass : mainBass;
+    const m = melody[step % melody.length];
+    const b = bass[Math.floor((step / 4) % bass.length)];
+
+    // 베이스는 길게, 멜로디는 오르골처럼 짧고 둥글게.
+    if (step % 4 === 0) softPad(b, now, 2.1, isEnding ? 0.030 : 0.024);
+    softBell(m, now + 0.02, isEnding ? 0.78 : 0.72, isEnding ? 0.038 : 0.032);
+
+    // 가끔만 아주 작은 화음. 불쾌감을 줄이기 위해 볼륨을 낮게 유지합니다.
+    if (step % 4 === 2) softBell(m * 1.5, now + 0.08, 0.55, isEnding ? 0.014 : 0.010);
+
+    step++;
+  };
+
+  const previousToggle = toggleBgm;
+  toggleBgm = function() {
+    previousToggle();
+    if (bgmOn) {
+      clearInterval(bgmTimer);
+      playBgmNote();
+      bgmTimer = setInterval(playBgmNote, 620);
+    }
+  };
+
+  const previousShow = showScreen;
+  showScreen = function(id) {
+    previousShow(id);
+    if (id === 'ending') {
+      setEndingBgm(true);
+      if (bgmOn) {
+        clearInterval(bgmTimer);
+        playBgmNote();
+        bgmTimer = setInterval(playBgmNote, 620);
+      }
+    }
+  };
+}
+
+applyMusicPatchV6();
+
+function applyArirangMusicPatchV7() {
+  let musicMode = 'main';
+  let step = 0;
+
+  // 아리랑 선율을 베이스로 한 부드러운 루프입니다.
+  // 전통 민요 느낌을 살리되, 게임 BGM처럼 반복되도록 박자를 단순화했습니다.
+  const arirangMain = [
+    392.00, 440.00, 493.88, 587.33,
+    493.88, 440.00, 392.00, 440.00,
+    493.88, 587.33, 659.25, 587.33,
+    493.88, 440.00, 392.00, 329.63,
+    392.00, 440.00, 493.88, 440.00,
+    392.00, 329.63, 293.66, 329.63,
+    392.00, 440.00, 392.00, 329.63,
+    293.66, 329.63, 392.00, 392.00
+  ];
+
+  const arirangEnding = [
+    493.88, 587.33, 659.25, 783.99,
+    659.25, 587.33, 493.88, 587.33,
+    659.25, 783.99, 880.00, 783.99,
+    659.25, 587.33, 493.88, 440.00,
+    493.88, 587.33, 659.25, 587.33,
+    493.88, 440.00, 392.00, 440.00,
+    493.88, 587.33, 493.88, 440.00,
+    392.00, 440.00, 493.88, 493.88
+  ];
+
+  const mainBass = [196.00, 196.00, 246.94, 246.94, 220.00, 220.00, 196.00, 164.81];
+  const endingBass = [246.94, 246.94, 329.63, 329.63, 293.66, 293.66, 246.94, 220.00];
+
+  window.setEndingBgm = function(on) {
+    const next = on ? 'ending' : 'main';
+    if (musicMode !== next) {
+      musicMode = next;
+      step = 0;
+    }
+  };
+
+  function makeGain(start, duration, volume, attack=0.05) {
+    const gain = bgmCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + attack);
+    gain.gain.exponentialRampToValueAtTime(volume * 0.45, start + duration * 0.62);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    return gain;
+  }
+
+  function gayageumLike(freq, start, duration, volume) {
+    if (!bgmCtx) return;
+    const osc1 = bgmCtx.createOscillator();
+    const osc2 = bgmCtx.createOscillator();
+    const filter = bgmCtx.createBiquadFilter();
+    const gain = makeGain(start, duration, volume, 0.025);
+    osc1.type = 'triangle';
+    osc2.type = 'sine';
+    osc1.frequency.value = freq;
+    osc2.frequency.value = freq * 2;
+    filter.type = 'lowpass';
+    filter.frequency.value = 1450;
+    filter.Q.value = 0.6;
+    osc1.connect(filter);
+    osc2.connect(filter);
+    filter.connect(gain).connect(bgmCtx.destination);
+    osc1.start(start);
+    osc2.start(start);
+    osc1.stop(start + duration + 0.04);
+    osc2.stop(start + duration + 0.04);
+  }
+
+  function softDrum(start, volume) {
+    if (!bgmCtx) return;
+    const osc = bgmCtx.createOscillator();
+    const gain = bgmCtx.createGain();
+    const filter = bgmCtx.createBiquadFilter();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(92, start);
+    osc.frequency.exponentialRampToValueAtTime(54, start + 0.16);
+    filter.type = 'lowpass';
+    filter.frequency.value = 420;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.24);
+    osc.connect(filter).connect(gain).connect(bgmCtx.destination);
+    osc.start(start);
+    osc.stop(start + 0.26);
+  }
+
+  function softPad(freq, start, duration, volume) {
+    if (!bgmCtx) return;
+    const osc = bgmCtx.createOscillator();
+    const filter = bgmCtx.createBiquadFilter();
+    const gain = makeGain(start, duration, volume, 0.22);
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    filter.type = 'lowpass';
+    filter.frequency.value = 620;
+    osc.connect(filter).connect(gain).connect(bgmCtx.destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.1);
+  }
+
+  playBgmNote = function() {
+    if (!bgmCtx || !bgmOn) return;
+    const now = bgmCtx.currentTime;
+    const isEnding = musicMode === 'ending';
+    const melody = isEnding ? arirangEnding : arirangMain;
+    const bass = isEnding ? endingBass : mainBass;
+    const note = melody[step % melody.length];
+    const bassNote = bass[Math.floor((step / 4) % bass.length)];
+
+    if (step % 4 === 0) softPad(bassNote, now, 2.3, isEnding ? 0.032 : 0.026);
+    if (step % 8 === 0) softDrum(now + 0.01, isEnding ? 0.032 : 0.024);
+
+    gayageumLike(note, now + 0.02, isEnding ? 0.72 : 0.68, isEnding ? 0.043 : 0.036);
+
+    // 아리랑 느낌의 여운을 위해 특정 박자에 낮은 화음을 아주 작게 추가합니다.
+    if (step % 4 === 2) gayageumLike(note * 0.75, now + 0.07, 0.55, isEnding ? 0.018 : 0.013);
+
+    step++;
+  };
+
+  const previousToggle = toggleBgm;
+  toggleBgm = function() {
+    previousToggle();
+    if (bgmOn) {
+      clearInterval(bgmTimer);
+      playBgmNote();
+      bgmTimer = setInterval(playBgmNote, 520);
+    }
+  };
+
+  const previousShow = showScreen;
+  showScreen = function(id) {
+    previousShow(id);
+    if (id === 'ending') {
+      setEndingBgm(true);
+      if (bgmOn) {
+        clearInterval(bgmTimer);
+        playBgmNote();
+        bgmTimer = setInterval(playBgmNote, 500);
+      }
+    }
+  };
+}
+
+applyArirangMusicPatchV7();
 newState(false);
 render();
 </script>
